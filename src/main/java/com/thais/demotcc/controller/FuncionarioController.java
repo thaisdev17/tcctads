@@ -1,11 +1,16 @@
 
 package com.thais.demotcc.controller;
 
+import static com.thais.demotcc.config.Autenticar.KEY;
 import com.thais.demotcc.model.Funcionario;
 import com.thais.demotcc.services.FuncionarioService;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -75,5 +80,32 @@ public class FuncionarioController {
         func = funcionarioService.buscaTodos();
 
         return new ResponseEntity(func, HttpStatus.OK);
+    }
+    
+    /*########################################################################*/
+    @RequestMapping(value = "/loginFuncionario", method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity autenticarFuncionario(@RequestBody Funcionario funcionario){
+        
+        if (funcionario.getEmail().isEmpty() || funcionario.getSenha().isEmpty()) {
+            return new ResponseEntity(HttpStatus.FORBIDDEN);
+        }
+        
+        Funcionario funcionarioAutenticar = funcionarioService.autenticarFuncionario(funcionario);
+        if (funcionarioAutenticar == null) {
+            return new ResponseEntity<>(funcionarioAutenticar, HttpStatus.FORBIDDEN);
+        }
+        
+        JwtBuilder jwtBuilder = Jwts.builder();
+        jwtBuilder.setSubject(funcionarioAutenticar.getIdPessoa() + "");
+        jwtBuilder.claim("funcionario", funcionarioAutenticar.getNomeCompleto());
+        jwtBuilder.setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000));
+        jwtBuilder.signWith(KEY);
+        
+        String token = jwtBuilder.compact();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+
+        return new ResponseEntity<>(headers, HttpStatus.OK);
     }
 }

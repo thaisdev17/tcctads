@@ -32,4 +32,8 @@ public class ProprietarioService {
     public void desativarProprietario(Long id){
         proprietarioRepository.deleteById(id);
     }
+    
+    public Proprietario autenticarProprietario(Proprietario proprietario){
+        return proprietarioRepository.findById(proprietario.getIdPessoa()).get();
+    }
 }

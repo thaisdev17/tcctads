@@ -1,10 +1,15 @@
 
 package com.thais.demotcc.controller;
 
+import static com.thais.demotcc.config.Autenticar.KEY;
 import com.thais.demotcc.model.Proprietario;
 import com.thais.demotcc.services.ProprietarioService;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import java.util.Date;
 import java.util.NoSuchElementException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -61,5 +66,29 @@ public class ProprietarioController {
     ResponseEntity desativarProprietario(@PathVariable Long id){
         proprietarioService.desativarProprietario(id);
         return new ResponseEntity(HttpStatus.OK);
+    }
+    
+    /*########################################################################*/
+    @RequestMapping(value = "/loginProprietario", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity autenticarProprietario(@RequestBody Proprietario adminProprietario){
+        
+        Proprietario proprietarioAutenticado = proprietarioService.autenticarProprietario(adminProprietario);
+        if (proprietarioAutenticado == null || proprietarioAutenticado.getEmail().isEmpty() || 
+                proprietarioAutenticado.getSenha().isEmpty()) {
+            return new ResponseEntity(HttpStatus.FORBIDDEN);
+        }
+        
+        JwtBuilder jwtBuilder = Jwts.builder();
+        jwtBuilder.setSubject(proprietarioAutenticado.getIdPessoa() + "");
+        jwtBuilder.claim("proprietario", true);
+        jwtBuilder.setExpiration(new Date(System.currentTimeMillis() + 10 * 60 * 1000));
+        jwtBuilder.signWith(KEY);
+        
+        String token = jwtBuilder.compact();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+
+        return new ResponseEntity<>(headers, HttpStatus.OK);
     }
 }

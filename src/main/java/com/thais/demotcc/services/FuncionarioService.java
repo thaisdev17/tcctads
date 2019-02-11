@@ -37,4 +37,10 @@ public class FuncionarioService {
      public List<Funcionario> buscaTodos(){
         return funcionarioRepository.buscaEOrdenaPorID();
     }
+     
+    public Funcionario autenticarFuncionario(Funcionario funcionario){
+        Funcionario funcionarioAutenticado;
+        funcionarioAutenticado = funcionarioRepository.findByEmailAndSenha(funcionario.getEmail(), funcionario.getSenha());
+        return funcionarioAutenticado;
+    }
 }
